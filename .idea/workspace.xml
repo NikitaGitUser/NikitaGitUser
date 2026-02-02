@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c96e7b43-3399-4290-99b8-4b65479addd2" name="Changes" comment="commit 2 add calculator" />
+    <list default="true" id="c96e7b43-3399-4290-99b8-4b65479addd2" name="Changes" comment="commit 2 add calculator">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -48,6 +50,8 @@
       <updated>1769599930752</updated>
       <workItem from="1769599933301" duration="1040000" />
       <workItem from="1769694750602" duration="1081000" />
+      <workItem from="1769769221152" duration="416000" />
+      <workItem from="1769769655079" duration="44000" />
     </task>
     <task id="LOCAL-00001" summary="commit 1 test - hello world">
       <created>1769600234446</created>
@@ -87,7 +91,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="case_1" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
