@@ -88,6 +88,19 @@
             border-color: #3498db;
             outline: none;
         }
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
 
         .checkbox-group {
             margin-top: 20px;
@@ -257,7 +270,8 @@
             <form method="POST" action="">
                 <div class="input-group">
                     <label for="amount">Сумма вклада, ₽</label>
-                    <input type="number" id="amount" name="amount" min="1000" step="1000" value="100000" required>
+
+                    <input type="text" id="amount" name="amount" value="100000" inputmode="numeric" required>
                 </div>
 
                 <div class="input-group">
@@ -272,7 +286,8 @@
 
                 <div class="input-group">
                     <label for="replenishment">Пополнение вклада (ежемесячное), ₽</label>
-                    <input type="number" id="replenishment" name="replenishment" min="0" step="1000" value="0">
+
+                    <input type="text" id="replenishment" name="replenishment" value="0" inputmode="numeric">
                 </div>
 
                 <div class="checkbox-group">
@@ -339,6 +354,31 @@
 </div>
 
 <script>
+    function formatNumber(value) {
+        return value
+            .replace(/\D/g, '')                 // только цифры
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    function unformatNumber(value) {
+        return value.replace(/\s/g, '');
+    }
+
+    ['amount', 'replenishment'].forEach(id => {
+        const input = document.getElementById(id);
+
+        // форматируем при вводе
+        input.addEventListener('input', () => {
+            const cursor = input.selectionStart;
+            input.value = formatNumber(input.value);
+            input.setSelectionRange(cursor, cursor);
+        });
+
+        // форматируем при загрузке
+        input.value = formatNumber(input.value);
+    });
+
+
     function toggleCalendar() {
         const calendar = document.getElementById('calendar');
         calendar.classList.toggle('active');
@@ -359,10 +399,12 @@
 
     function calculateDeposit() {
         // Получаем значения из формы
-        const amount = parseFloat(document.getElementById('amount').value);
+        const amount = parseFloat(unformatNumber(document.getElementById('amount').value));
+       // const amount = parseFloat(document.getElementById('amount').value);
         const term = parseInt(document.getElementById('term').value);
         const rate = parseFloat(document.getElementById('rate').value);
-        const replenishment = parseFloat(document.getElementById('replenishment').value);
+       // const replenishment = parseFloat(document.getElementById('replenishment').value);
+        const replenishment = parseFloat(unformatNumber(document.getElementById('replenishment').value));
         const capitalization = document.getElementById('capitalization').checked;
 
         // Обновляем сводку параметров
