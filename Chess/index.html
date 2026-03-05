@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Красивые шашки · 2P и компьютер</title>
+    <!-- jQuery + jQuery UI для красоты (тени, анимация) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: linear-gradient(145deg, #1e4b3c 0%, #2a5f4c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .game-container {
+            background: #3a2e1f;
+            background-image: radial-gradient(circle at 30% 20%, #5e4b35, #2f2419);
+            padding: 30px 40px 35px 40px;
+            border-radius: 60px 60px 80px 80px;
+            box-shadow: 0 30px 30px rgba(0,0,0,0.6), inset 2px 2px 10px #c0a16b, inset -3px -3px 8px #1f170e;
+            border: 1px solid #b59e6b;
+        }
+        .board-wrapper {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .board {
+            width: 520px;
+            height: 520px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 4px;
+            background-color: #deb887;
+            padding: 8px;
+            border-radius: 28px;
+            box-shadow: inset 0 0 0 2px #7c5d3e, 0 20px 25px #1e2b1e;
+            border: 1px solid #efd39c;
+        }
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: 0.15s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        .cell.dark {
+            background: #7c5d3e;
+            background: radial-gradient(circle at 30% 30%, #9f7e5a, #5f432b);
+        }
+        .cell.light {
+            background: #eedbbc;
+            background: radial-gradient(circle at 70% 70%, #f8eedb, #dbbd8c);
+            box-shadow: inset -2px -2px 5px #b49164, inset 2px 2px 5px #fff4df;
+            cursor: default;
+        }
+        .cell.dark.available {
+            background: #5f9ea0;
+            background: radial-gradient(circle at 50% 50%, #87ceeb, #4682b4);
+            box-shadow: 0 0 15px #a0d0ff;
+            transform: scale(1.02);
+        }
+        .cell.dark.selected {
+            background: #d4a017;
+            background: radial-gradient(circle at 50% 50%, #ffd966, #b8860b);
+            box-shadow: 0 0 22px #ffbb33;
+        }
+        /* фишки */
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            box-shadow: 0 6px 0 #22222299, 0 8px 8px black, inset -3px -3px 8px rgba(0,0,0,0.5), inset 3px 3px 10px rgba(255,255,240,0.7);
+            transition: 0.1s;
+            border: 2px solid #faf0c0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            font-weight: bold;
+            text-shadow: 2px 4px 6px black;
+            color: #ffecaa;
+        }
+        .piece.white {
+            background: #f5f0e6;
+            background: radial-gradient(circle at 40% 40%, #fffcf0, #c0b39f);
+            border-color: #fef7d5;
+            color: #404040;
+            text-shadow: 0 2px 4px #b0a28b;
+        }
+        .piece.black {
+            background: #2b2b2b;
+            background: radial-gradient(circle at 40% 40%, #5a5a5a, #1a1a1a);
+            border-color: #c0b28b;
+            color: #ffe3a0;
+        }
+        .piece.king::after {
+            content: "♔";
+            font-size: 36px;
+            line-height: 1;
+            margin-top: -8px;
+            filter: drop-shadow(2px 4px 3px black);
+        }
+        .piece:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #222, 0 5px 8px black;
+        }
+        .info-panel {
+            background: #eddead;
+            padding: 20px 20px;
+            border-radius: 40px;
+            min-width: 230px;
+            box-shadow: inset 0 0 0 2px #cbae7a, 0 10px 15px #1e2d1e;
+            border: 1px solid #fbe6b0;
+            color: #2f2a1f;
+            font-weight: 500;
+        }
+        .turn-indicator {
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #4f3f2e;
+            padding: 15px 20px;
+            border-radius: 50px;
+            color: #f0e0b0;
+            margin-bottom: 25px;
+            box-shadow: inset 1px 1px 6px #1f160e, inset -2px -2px 4px #7f6e56;
+        }
+        .turn-color {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #ffd78c;
+        }
+        .turn-color.white-turn { background: #f5efe3; box-shadow: 0 0 15px white; }
+        .turn-color.black-turn { background: #2f2f2f; box-shadow: 0 0 15px #9a9a9a; }
+        .score {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            background: #3e3325;
+            color: #ffeca6;
+            padding: 15px 25px;
+            border-radius: 40px;
+            margin: 20px 0;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+        button {
+            background: #bfa37c;
+            border: none;
+            border-radius: 40px;
+            padding: 14px 22px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #252016;
+            box-shadow: 0 6px 0 #5e4a32, 0 8px 12px black;
+            cursor: pointer;
+            transition: 0.07s linear;
+            border: 1px solid #efd296;
+            flex: 1 0 auto;
+        }
+        button:active {
+            transform: translateY(5px);
+            box-shadow: 0 2px 0 #5e4a32, 0 5px 10px black;
+        }
+        button.ai-btn {
+            background: #5d7b8c;
+            color: #fafff0;
+            box-shadow: 0 6px 0 #2f4858;
+        }
+        .status {
+            font-size: 22px;
+            text-align: center;
+            background: #e7d8b8;
+            padding: 12px;
+            border-radius: 30px;
+            margin-top: 20px;
+            border: 2px solid #a5916a;
+        }
+        .footer-note {
+            color: #d4c099;
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="board-wrapper">
+        <!-- шахматная доска 8x8 -->
+        <div class="board" id="board"></div>
+
+        <div class="info-panel">
+            <div class="turn-indicator" id="turnIndicator">
+                <span id="turnText">Белые</span>
+                <div class="turn-color white-turn" id="turnColor"></div>
+            </div>
+            <div class="score">
+                <span>⚪ <span id="whiteScore">0</span></span>
+                <span>⚫ <span id="blackScore">0</span></span>
+            </div>
+            <div class="controls">
+                <button id="newGameBtn">🔄 Новая</button>
+                <button id="aiMoveBtn" class="ai-btn">🤖 Компьютер</button>
+                <button id="switchModeBtn">👥 2 игрока</button>
+            </div>
+            <div class="status" id="statusMessage">Ход белых (игрок)</div>
+            <div class="footer-note">✧ два режима ✧ дамка ♔</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function() {
+        // ---------- Шашки :: Логика + красивый интерфейс ----------
+        const ROWS = 8, COLS = 8;
+        const EMPTY = 0, WHITE = 1, BLACK = 2, WHITE_KING = 3, BLACK_KING = 4;
+
+        let board = [];
+        let currentPlayer = WHITE;            // белые начинают
+        let selectedRow = -1, selectedCol = -1;
+        let availableMoves = [];              // массив {toRow, toCol, jumpRow, jumpCol} для взятий
+        let mandatoryJump = false;             // обязательно ли бить (проверка при клике)
+        let whiteCount = 12, blackCount = 12;
+        let gameMode = 'twoPlayers';            // 'twoPlayers' или 'ai'
+        let aiTimeout = null;
+
+        // Инициализация начальной расстановки
+        function initBoard() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(EMPTY));
+            // белые сверху (ряды 0,1,2) - но в шашках обычно белые снизу? сделаем белые сверху (0,1,2) для простоты, но на доске белые будут сверху, черные снизу — визуально не важно. но для классики: белые на 5,6,7? Сделаем белые снизу (ряды 5,6,7) — так традиционнее.
+            // Пусть белые занимают ряды 5,6,7 (индексы 5-7) черные 0,1,2.
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if ((r + c) % 2 === 1) board[r][c] = BLACK;      // черные сверху
+                }
+            }
+            for (let r = 5; r < 8; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if ((r + c) % 2 === 1) board[r][c] = WHITE;      // белые снизу
+                }
+            }
+            // синхронизируем счет
+            whiteCount = 12; blackCount = 12;
+            currentPlayer = WHITE;
+            selectedRow = -1; selectedCol = -1;
+            availableMoves = [];
+            mandatoryJump = false;
+            updateScoreDisplay();
+            $('#turnText').text('Белые');
+            $('#turnColor').removeClass('white-turn black-turn').addClass('white-turn');
+            $('#statusMessage').text('Ход белых (игрок)');
+        }
+
+        // клонирование доски
+        function copyBoard(src) {
+            return src.map(row => [...row]);
+        }
+
+        // проверка, есть ли у игрока обязательные взятия (любые)
+        function hasAnyJump(player, b = board) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const piece = b[r][c];
+                    if (piece === player || piece === (player === WHITE ? WHITE_KING : BLACK_KING)) {
+                        const jumps = getJumpsForPiece(r, c, b);
+                        if (jumps.length > 0) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // все возможные прыжки с (r,c) без учета множественных? возвращает массив {toRow, toCol, jumpRow, jumpCol}
+        function getJumpsForPiece(r, c, b = board) {
+            const piece = b[r][c];
+            if (piece === EMPTY) return [];
+            const isWhite = (piece === WHITE || piece === WHITE_KING);
+            const isKing = (piece === WHITE_KING || piece === BLACK_KING);
+            const directions = [];
+            if (isWhite || isKing) { directions.push([-1, -1], [-1, 1]); }  // белые вверх (уменьшение r)
+            if (!isWhite || isKing) { directions.push([1, -1], [1, 1]); }   // черные вниз (увеличение r)
+
+            const jumps = [];
+            for (let [dr, dc] of directions) {
+                const midR = r + dr, midC = c + dc;
+                const landR = r + 2*dr, landC = c + 2*dc;
+                if (landR < 0 || landR >= ROWS || landC < 0 || landC >= COLS) continue;
+                const midPiece = b[midR][midC];
+                if (midPiece === EMPTY) continue;
+                const isMidWhite = (midPiece === WHITE || midPiece === WHITE_KING);
+                if (isWhite && isMidWhite) continue;
+                if (!isWhite && !isMidWhite) continue; // не своя, но и не враг? враг если противоположный цвет
+                // midPiece должен быть врагом
+                if ((isWhite && (midPiece === BLACK || midPiece === BLACK_KING)) || (!isWhite && (midPiece === WHITE || midPiece === WHITE_KING))) {
+                    if (b[landR][landC] === EMPTY) {
+                        jumps.push({ toRow: landR, toCol: landC, jumpRow: midR, jumpCol: midC });
+                    }
+                }
+            }
+            return jumps;
+        }
+
+        // Получить все возможные ходы (все прыжки и простые шаги) для данной клетки. jumpsOnly если true, только прыжки.
+        function getAllMovesForPiece(r, c, b = board, jumpsOnly = false) {
+            const piece = b[r][c];
+            if (piece === EMPTY) return [];
+            const isWhite = (piece === WHITE || piece === WHITE_KING);
+            const isKing = (piece === WHITE_KING || piece === BLACK_KING);
+            const jumps = getJumpsForPiece(r, c, b);
+            if (jumps.length > 0) return jumps;   // при наличии прыжков простые шаги не учитываются
+            if (jumpsOnly) return [];
+
+            // простые шаги
+            const moves = [];
+            const dirs = [];
+            if (isWhite || isKing) dirs.push([-1, -1], [-1, 1]);
+            if (!isWhite || isKing) dirs.push([1, -1], [1, 1]);
+            for (let [dr, dc] of dirs) {
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+                if (b[nr][nc] === EMPTY) moves.push({ toRow: nr, toCol: nc, jumpRow: -1, jumpCol: -1 });
+            }
+            return moves;
+        }
+
+        // рекурсивно собрать все цепочки (для множественных взятий) — для UI подсветки достаточно первого уровня, но при ходе игрок может бить несколько раз, мы обработаем отдельно.
+        // функция performMove: выполняет ход, обновляет доску, превращает в дамку, переключает игрока, если нет обязательного продолжения.
+        function performMove(fromR, fromC, toR, toC, jumpR, jumpC, b = board, updateUI = true) {
+            const piece = b[fromR][fromC];
+            if (piece === EMPTY) return false;
+            // перемещаем фигуру
+            b[toR][toC] = piece;
+            b[fromR][fromC] = EMPTY;
+            // если было взятие, убираем прыгнутую фигуру
+            if (jumpR !== -1 && jumpC !== -1) {
+                b[jumpR][jumpC] = EMPTY;
+                // обновим счет
+                if (piece === WHITE || piece === WHITE_KING) blackCount--;
+                else whiteCount--;
+            }
+
+            // превращение в дамку (если достигли последнего ряда)
+            if (piece === WHITE && toR === 0) b[toR][toC] = WHITE_KING;
+            if (piece === BLACK && toR === 7) b[toR][toC] = BLACK_KING;
+            if (piece === WHITE_KING || piece === BLACK_KING) ; // остаются дамками
+
+            // проверка на дополнительные взятия с той же клетки (множественное)
+            const newPiece = b[toR][toC];
+            const additionalJumps = getJumpsForPiece(toR, toC, b);
+            if (jumpR !== -1 && jumpC !== -1 && additionalJumps.length > 0) {
+                // если после взятия можно бить ещё, не переключаем игрока, выделяем эту же фигуру
+                if (updateUI) {
+                    // сброс выделения
+                    selectedRow = toR; selectedCol = toC;
+                    availableMoves = additionalJumps.map(j => ({ toRow: j.toRow, toCol: j.toCol, jumpRow: j.jumpRow, jumpCol: j.jumpCol }));
+                    renderBoard();
+                    $('#statusMessage').text('Продолжите взятие');
+                }
+                return 'continue';
+            } else {
+                if (updateUI) {
+                    // переключение игрока
+                    currentPlayer = (currentPlayer === WHITE ? BLACK : WHITE);
+                    selectedRow = -1; selectedCol = -1;
+                    availableMoves = [];
+                    renderBoard();
+                    updateTurnDisplay();
+
+                    // проверка конца игры
+                    if (whiteCount === 0) { $('#statusMessage').text('Черные победили!'); }
+                    else if (blackCount === 0) { $('#statusMessage').text('Белые победили!'); }
+                    else {
+                        $('#statusMessage').text(`Ход ${currentPlayer === WHITE ? 'белых' : 'черных'}`);
+                        // если режим AI и ход чёрных (AI), запускаем AI ход
+                        if (gameMode === 'ai' && currentPlayer === BLACK) {
+                            window.aiMoveScheduled = setTimeout(() => aiMove(), 200);
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+
+        // обновить счет на панели
+        function updateScoreDisplay() {
+            $('#whiteScore').text(whiteCount);
+            $('#blackScore').text(blackCount);
+        }
+
+        function updateTurnDisplay() {
+            if (currentPlayer === WHITE) {
+                $('#turnText').text('Белые');
+                $('#turnColor').removeClass('white-turn black-turn').addClass('white-turn');
+            } else {
+                $('#turnText').text('Черные');
+                $('#turnColor').removeClass('white-turn black-turn').addClass('black-turn');
+            }
+        }
+
+        // отрисовка доски
+        function renderBoard() {
+            const $board = $('#board');
+            $board.empty();
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const isDark = (r + c) % 2 === 1;
+                    const cellClass = isDark ? 'cell dark' : 'cell light';
+                    const $cell = $('<div>').addClass(cellClass).attr('data-row', r).attr('data-col', c);
+                    const piece = board[r][c];
+                    if (piece !== EMPTY) {
+                        const pieceType = (piece === WHITE || piece === WHITE_KING) ? 'white' : 'black';
+                        const isKing = (piece === WHITE_KING || piece === BLACK_KING);
+                        const $piece = $('<div>').addClass('piece ' + pieceType);
+                        if (isKing) $piece.addClass('king');
+                        $cell.append($piece);
+                    }
+                    // подсветка выбранной клетки
+                    if (r === selectedRow && c === selectedCol) $cell.addClass('selected');
+                    // подсветка доступных ходов
+                    if (availableMoves.some(m => m.toRow === r && m.toCol === c)) $cell.addClass('available');
+                    $board.append($cell);
+                }
+            }
+            updateScoreDisplay();
+        }
+
+        // обработка клика по клетке
+        function handleCellClick(e) {
+            const $cell = $(e.currentTarget);
+            const row = parseInt($cell.data('row'));
+            const col = parseInt($cell.data('col'));
+
+            // если игра окончена (ноль шашек) блокируем ходы
+            if (whiteCount === 0 || blackCount === 0) return;
+
+            // AI режим и ход чёрных (компьютера) — блокируем клики
+            if (gameMode === 'ai' && currentPlayer === BLACK) return;
+
+            const piece = board[row][col];
+
+            // 1. Выбор фигуры (если есть своя фигура и нет выбранной или выбрана другая)
+            if (piece !== EMPTY && ((piece === WHITE || piece === WHITE_KING) && currentPlayer === WHITE) ||
+                ((piece === BLACK || piece === BLACK_KING) && currentPlayer === BLACK)) {
+                // если уже есть выбранная и нажали на другую свою - переключиться
+                if (selectedRow !== row || selectedCol !== col) {
+                    // посчитать доступные ходы для этой фигуры
+                    let moves = getAllMovesForPiece(row, col, board, false);
+                    // фильтруем: если у текущего игрока есть обязательные взятия, то можно ходить только теми фигурами, у которых есть прыжки
+                    const anyJump = hasAnyJump(currentPlayer);
+                    if (anyJump) {
+                        moves = moves.filter(m => m.jumpRow !== -1);
+                    }
+                    if (moves.length > 0 || anyJump === false) { // разрешаем выбрать даже без ходов, но лучше если есть ходы
+                        selectedRow = row;
+                        selectedCol = col;
+                        availableMoves = moves;
+                    } else {
+                        // нет доступных ходов у этой фигуры
+                        return;
+                    }
+                } else {
+                    // снятие выделения при клике на ту же фигуру
+                    selectedRow = -1; selectedCol = -1;
+                    availableMoves = [];
+                }
+                renderBoard();
+                return;
+            }
+
+            // 2. Попытка совершить ход (есть выделенная и клетка назначения в availableMoves)
+            if (selectedRow !== -1 && selectedCol !== -1) {
+                const move = availableMoves.find(m => m.toRow === row && m.toCol === col);
+                if (move) {
+                    // выполняем ход
+                    const result = performMove(selectedRow, selectedCol, move.toRow, move.toCol, move.jumpRow, move.jumpCol, board, true);
+                    if (result === 'continue') {
+                        // доска уже перерисована внутри, но мы тут можем подсветить
+                    }
+                    // если ход закончен — плеер переключен
+                } else {
+                    // клик мимо — сброс выделения
+                    selectedRow = -1; selectedCol = -1;
+                    availableMoves = [];
+                    renderBoard();
+                }
+            }
+        }
+
+        // ----- AI (очень простой, выбирает случайный доступный ход, но если есть взятие — бьёт) -----
+        function aiMove() {
+            if (gameMode !== 'ai' || currentPlayer !== BLACK || blackCount === 0 || whiteCount === 0) return;
+
+            // собрать все возможные ходы за чёрных
+            let allMoves = [];
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const piece = board[r][c];
+                    if (piece === BLACK || piece === BLACK_KING) {
+                        const moves = getAllMovesForPiece(r, c, board, false);
+                        moves.forEach(m => allMoves.push({ fromR: r, fromC: c, ...m }));
+                    }
+                }
+            }
+            // обязательные взятия
+            const jumpMoves = allMoves.filter(m => m.jumpRow !== -1);
+            if (jumpMoves.length > 0) allMoves = jumpMoves; // только прыжки
+
+            if (allMoves.length === 0) {
+                // нет ходов — передача хода или поражение? обычно передача, но у нас нет ходов — тогда игрок пропускает? В шашках при невозможности хода проигрыш.
+                // для простоты если нет ходов — сдаёмся, объявим победу белых
+                $('#statusMessage').text('У черных нет ходов. Белые победили!');
+                return;
+            }
+
+            // случайный ход
+            const move = allMoves[Math.floor(Math.random() * allMoves.length)];
+            // выполняем ход от имени компьютера
+            const result = performMove(move.fromR, move.fromC, move.toRow, move.toCol, move.jumpRow, move.jumpCol, board, true);
+            // performMove сам переключит на белых и при необходимости перезапустит ai (если не continue)
+        }
+
+        // Сброс игры
+        function newGame() {
+            if (aiTimeout) clearTimeout(aiTimeout);
+            initBoard();
+            renderBoard();
+        }
+
+        // переключение режима
+        function toggleMode() {
+            if (gameMode === 'twoPlayers') {
+                gameMode = 'ai';
+                $('#switchModeBtn').text('🤖 AI режим');
+                $('#statusMessage').text('Режим: против компьютера');
+            } else {
+                gameMode = 'twoPlayers';
+                $('#switchModeBtn').text('👥 2 игрока');
+                $('#statusMessage').text('Режим: два игрока');
+            }
+            newGame(); // перезапуск партии
+        }
+
+        // принудительный ход компьютера (кнопка)
+        function forceAiMove() {
+            if (gameMode === 'ai' && currentPlayer === BLACK) {
+                aiMove();
+            } else if (gameMode === 'ai' && currentPlayer === WHITE) {
+                $('#statusMessage').text('Сейчас ход белых (игрок)');
+            } else {
+                $('#statusMessage').text('Режим двух игроков');
+            }
+        }
+
+        // подключение обработчиков
+        $('#board').on('click', '.cell', handleCellClick);
+        $('#newGameBtn').on('click', newGame);
+        $('#switchModeBtn').on('click', toggleMode);
+        $('#aiMoveBtn').on('click', forceAiMove);
+
+        // старт
+        initBoard();
+        renderBoard();
+    });
+</script>
+</body>
+</html>
